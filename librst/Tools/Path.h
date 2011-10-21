@@ -44,11 +44,11 @@ public:
 		return (1.0 - s) * start + s * end;
 	}
 
-	Eigen::VectorXd getConfigDeriv(double s) const {
+	Eigen::VectorXd getConfigDeriv(double /* s */) const {
 		return (end - start) / length;
 	}
 
-	Eigen::VectorXd getConfigDeriv2(double s) const {
+	Eigen::VectorXd getConfigDeriv2(double /* s */) const {
 		return Eigen::VectorXd::Zero(start.size());
 	}
 

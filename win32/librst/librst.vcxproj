@@ -133,6 +133,7 @@
     <ClCompile Include="..\..\librst\Tools\Robot.cpp" />
     <ClCompile Include="..\..\librst\Tools\RRT.cpp" />
     <ClCompile Include="..\..\librst\Tools\Trajectory.cpp" />
+    <ClCompile Include="..\..\librst\Tools\Trajectory2.cpp" />
     <ClCompile Include="..\..\librst\Tools\World.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -174,6 +175,7 @@
     <ClInclude Include="..\..\librst\Tools\Robot.h" />
     <ClInclude Include="..\..\librst\Tools\RRT.h" />
     <ClInclude Include="..\..\librst\Tools\Trajectory.h" />
+    <ClInclude Include="..\..\librst\Tools\Trajectory2.h" />
     <ClInclude Include="..\..\librst\Tools\World.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

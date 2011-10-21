@@ -15,7 +15,7 @@ Trajectory::Trajectory(const list<VectorXd> &_path, const VectorXd &maxVelocity,
 	duration(0.0)
 {
 	// calculate time between waypoints and initial velocities of linear segments
-	for(int i = 0; i < path.size() - 1; i++) {
+	for(unsigned int i = 0; i < path.size() - 1; i++) {
 		durations[i] = 0.0;
 		for(int j = 0; j < path[i].size(); j++) {
 			durations[i] = max(durations[i], abs(path[i+1][j] - path[i][j]) / maxVelocity[j]);
@@ -27,7 +27,7 @@ Trajectory::Trajectory(const list<VectorXd> &_path, const VectorXd &maxVelocity,
 		
 		vector<double> slowDownFactors(path.size() - 1, 1.0);
 
-		for(int i = 0; i < path.size(); i++) {
+		for(unsigned int i = 0; i < path.size(); i++) {
 			// calculate initial blend duration
 			VectorXd previousVelocity = (i == 0) ? VectorXd::Zero(path[i].size()) : velocities[i-1];
 			VectorXd nextVelocity = (i == path.size() - 1) ? VectorXd::Zero(path[i].size()) : velocities[i];
@@ -59,7 +59,7 @@ Trajectory::Trajectory(const list<VectorXd> &_path, const VectorXd &maxVelocity,
 		}
 
 		// apply slow down factors to linear segments
-		for(int i = 0; i < path.size() - 1; i++) {
+		for(unsigned int i = 0; i < path.size() - 1; i++) {
 			velocities[i] *= slowDownFactors[i];
 			durations[i] /= slowDownFactors[i];
 		}
@@ -70,7 +70,7 @@ Trajectory::Trajectory(const list<VectorXd> &_path, const VectorXd &maxVelocity,
 
 	// calculate final blend durations
 	valid = true;
-	for(int i = 0; i < path.size(); i++) {
+	for(unsigned int i = 0; i < path.size(); i++) {
 		VectorXd previousVelocity = (i == 0) ? VectorXd::Zero(path[i].size()) : velocities[i-1];
 		VectorXd nextVelocity = (i == path.size() - 1) ? VectorXd::Zero(path[i].size()) : velocities[i];
 		blendDurations[i] = 0.0;
@@ -88,7 +88,7 @@ Trajectory::Trajectory(const list<VectorXd> &_path, const VectorXd &maxVelocity,
 
 
 	// calculate total time of trajectory
-	for(int i = 0; i < path.size() - 1; i++) {
+	for(unsigned int i = 0; i < path.size() - 1; i++) {
 		duration += durations[i];
 	}
 	duration += 0.5 * blendDurations.front();
@@ -110,7 +110,7 @@ VectorXd Trajectory::getPosition(double time) const {
 	else {
 		t -= 0.5 * blendDurations[0];
 	}
-	int i = 0;
+	unsigned int i = 0;
 	while(i < path.size() - 1 && t > durations[i]) {
 		t -= durations[i];
 		i++;
@@ -148,7 +148,7 @@ VectorXd Trajectory::getVelocity(double time) const {
 	else {
 		t -= 0.5 * blendDurations[0];
 	}
-	int i = 0;
+	unsigned int i = 0;
 	while(i < path.size() - 1 && t > durations[i]) {
 		t -= durations[i];
 		i++;
