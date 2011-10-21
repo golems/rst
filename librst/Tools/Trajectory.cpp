@@ -3,9 +3,10 @@
 using namespace std;
 using namespace Eigen;
 
+// Partially based on
 // John J. Craig. Introduction to Robotics - Mechanics and Control, 3rd Edition. Chapter 7.3
 
-Trajectory::Trajectory(const list<VectorXd> &_path, const VectorXd &maxVelocity, const VectorXd &maxAcceleration) :
+Trajectory::Trajectory(const list<VectorXd> &_path, const VectorXd &maxVelocity, const VectorXd &maxAcceleration, bool slowDown, bool removeWayPoints) :
 	path(_path.begin(), _path.end()),
 	velocities(path.size() - 1),
 	accelerations(path.size()),
@@ -13,6 +14,7 @@ Trajectory::Trajectory(const list<VectorXd> &_path, const VectorXd &maxVelocity,
 	blendDurations(path.size()),
 	duration(0.0)
 {
+	// calculate time between waypoints and initial velocities of linear segments
 	for(int i = 0; i < path.size() - 1; i++) {
 		durations[i] = 0.0;
 		for(int j = 0; j < path[i].size(); j++) {
@@ -21,40 +23,53 @@ Trajectory::Trajectory(const list<VectorXd> &_path, const VectorXd &maxVelocity,
 		velocities[i] = (path[i+1] - path[i]) / durations[i];
 	}
 
-	vector<double> slowDownFactors(path.size() - 1, 1.0);
-
-	for(int i = 0; i < path.size(); i++) {
-		VectorXd previousVelocity = (i == 0) ? VectorXd::Zero(path[i].size()) : velocities[i-1];
-		VectorXd nextVelocity = (i == path.size() - 1) ? VectorXd::Zero(path[i].size()) : velocities[i];
-		blendDurations[i] = 0.0;
-		for(int j = 0; j < path[i].size(); j++) {
-			blendDurations[i] = max(blendDurations[i], abs(nextVelocity[j] - previousVelocity[j]) / maxAcceleration[j]);
-		}
-
-		double maxDuration = numeric_limits<double>::max();
-		if(i > 0) {
-			maxDuration = min(maxDuration, durations[i-1]);
-		}
-		if(i < path.size() - 1) {
-			maxDuration = min(maxDuration, durations[i]);
-		}
+	if(slowDown) {
 		
-		if(blendDurations[i] > maxDuration) {
-			double slowDownFactor = sqrt(maxDuration / blendDurations[i]);
+		vector<double> slowDownFactors(path.size() - 1, 1.0);
+
+		for(int i = 0; i < path.size(); i++) {
+			// calculate initial blend duration
+			VectorXd previousVelocity = (i == 0) ? VectorXd::Zero(path[i].size()) : velocities[i-1];
+			VectorXd nextVelocity = (i == path.size() - 1) ? VectorXd::Zero(path[i].size()) : velocities[i];
+			blendDurations[i] = 0.0;
+			for(int j = 0; j < path[i].size(); j++) {
+				blendDurations[i] = max(blendDurations[i], abs(nextVelocity[j] - previousVelocity[j]) / maxAcceleration[j]);
+			}
+
+			// calculate maximum allowable blend duration for initial linear velocities
+			double maxDuration = numeric_limits<double>::max();
 			if(i > 0) {
-				slowDownFactors[i-1] = min(slowDownFactors[i-1], slowDownFactor);
+				maxDuration = min(maxDuration, durations[i-1]);
 			}
 			if(i < path.size() - 1) {
-				slowDownFactors[i] = slowDownFactor;
+				maxDuration = min(maxDuration, durations[i]);
+			}
+			
+			// calculate slow down factors for neighboring linear velocities such that
+			// the blend phase replaces at most half of the neighboring linear segments
+			if(blendDurations[i] > maxDuration) {
+				double slowDownFactor = sqrt(maxDuration / blendDurations[i]);
+				if(i > 0) {
+					slowDownFactors[i-1] = min(slowDownFactors[i-1], slowDownFactor);
+				}
+				if(i < path.size() - 1) {
+					slowDownFactors[i] = slowDownFactor;
+				}
 			}
 		}
+
+		// apply slow down factors to linear segments
+		for(int i = 0; i < path.size() - 1; i++) {
+			velocities[i] *= slowDownFactors[i];
+			durations[i] /= slowDownFactors[i];
+		}
+
 	}
 
-	for(int i = 0; i < path.size() - 1; i++) {
-		velocities[i] *= slowDownFactors[i];
-		durations[i] /= slowDownFactors[i];
-	}
 
+
+	// calculate final blend durations
+	valid = true;
 	for(int i = 0; i < path.size(); i++) {
 		VectorXd previousVelocity = (i == 0) ? VectorXd::Zero(path[i].size()) : velocities[i-1];
 		VectorXd nextVelocity = (i == path.size() - 1) ? VectorXd::Zero(path[i].size()) : velocities[i];
@@ -62,9 +77,17 @@ Trajectory::Trajectory(const list<VectorXd> &_path, const VectorXd &maxVelocity,
 		for(int j = 0; j < path[i].size(); j++) {
 			blendDurations[i] = max(blendDurations[i], abs(nextVelocity[j] - previousVelocity[j]) / maxAcceleration[j]);
 		}
+		if((i > 0 && blendDurations[i] > durations[i-1] + 0.000001)
+			|| (i < path.size() - 1 && blendDurations[i] > durations[i] + 0.000001))
+		{
+			valid = false;
+		}
+
 		accelerations[i] = (nextVelocity - previousVelocity) / blendDurations[i];
 	}
 
+
+	// calculate total time of trajectory
 	for(int i = 0; i < path.size() - 1; i++) {
 		duration += durations[i];
 	}
@@ -72,6 +95,9 @@ Trajectory::Trajectory(const list<VectorXd> &_path, const VectorXd &maxVelocity,
 	duration += 0.5 * blendDurations.back();
 }
 
+bool Trajectory::isValid() {
+	return valid;
+}
 
 VectorXd Trajectory::getPosition(double time) const {
 	if(time > duration) {

@@ -10,10 +10,22 @@
 class PathSegment
 {
 public:
-	virtual double getLength() const = 0;
-	virtual Eigen::VectorXd getConfiguration(double s) const = 0;
-	virtual Eigen::VectorXd getPathVelocity(double s) const = 0;
-	virtual Eigen::VectorXd getPathAcceleration(double s) const = 0;
+	PathSegment(double length = 0.0) :
+		length(length)
+	{
+	}
+	
+	virtual ~PathSegment() {}
+
+	double getLength() const {
+		return length;
+	}
+	virtual Eigen::VectorXd getConfig(double s) const = 0;
+	virtual Eigen::VectorXd getConfigDeriv(double s) const = 0;
+	virtual Eigen::VectorXd getConfigDeriv2(double s) const = 0;
+	virtual PathSegment* clone() const = 0;
+protected:
+	double length;
 };
 
 class LinearPathSegment : public PathSegment
@@ -22,32 +34,31 @@ public:
 	LinearPathSegment(const Eigen::VectorXd &start, const Eigen::VectorXd &end) :
 		start(start),
 		end(end),
-		length((end-start).norm())
+		PathSegment((end-start).norm())
 	{
 	}
 
-	double getLength() const {
-		return length;
-	}
-
-	Eigen::VectorXd getConfiguration(double s) const {
+	Eigen::VectorXd getConfig(double s) const {
 		s /= length;
 		s = std::max(0.0, std::min(1.0, s));
 		return (1.0 - s) * start + s * end;
 	}
 
-	Eigen::VectorXd getPathVelocity(double s) const {
+	Eigen::VectorXd getConfigDeriv(double s) const {
 		return (end - start) / length;
 	}
 
-	Eigen::VectorXd getPathAcceleration(double s) const {
+	Eigen::VectorXd getConfigDeriv2(double s) const {
 		return Eigen::VectorXd::Zero(start.size());
+	}
+
+	LinearPathSegment* clone() const {
+		return new LinearPathSegment(*this);
 	}
 
 private:
 	Eigen::VectorXd start;
 	Eigen::VectorXd end;
-	double length;
 };
 
 class CircularPathSegment : public PathSegment
@@ -69,39 +80,29 @@ public:
 		x = (intersection - distance * startDirection - center).normalized();
 		y = end - center;
 		y = (y - x * y.dot(x)).normalized();
-
-		// test code
-		//double distance1 = (start - intersection).norm();
-		//double distance2 = (end - intersection).norm();
-		//Eigen::VectorXd testStart = intersection + distance / distance1 * (start - intersection);
-		//double startError = (testStart - getConfiguration(0.0)).norm();
-		//Eigen::VectorXd testEnd = intersection + distance / distance2 * (end - intersection);
-		//double endError = (testEnd - getConfiguration(length)).norm();
-		//double deviation = (center - intersection).norm() - radius;
 	}
 
-	double getLength() const {
-		return length;
-	}
-
-	Eigen::VectorXd getConfiguration(double s) const {
+	Eigen::VectorXd getConfig(double s) const {
 		const double angle = s / radius;
 		return center + radius * (x * cos(angle) + y * sin(angle));
 	}
 
-	Eigen::VectorXd getPathVelocity(double s) const {
+	Eigen::VectorXd getConfigDeriv(double s) const {
 		const double angle = s / radius;
 		return - x * sin(angle) + y * cos(angle);
 	}
 
-	Eigen::VectorXd getPathAcceleration(double s) const {
+	Eigen::VectorXd getConfigDeriv2(double s) const {
 		const double angle = s / radius;
 		return - 1.0 / radius * (x * cos(angle) + y * sin(angle));
 	}
 
+	CircularPathSegment* clone() const {
+		return new CircularPathSegment(*this);
+	}
+
 private:
 	double radius;
-	double length;
 	Eigen::VectorXd center;
 	Eigen::VectorXd x;
 	Eigen::VectorXd y;
@@ -112,16 +113,15 @@ class Path
 {
 public:
 	Path(const std::list<Eigen::VectorXd> &path, double maxDeviation = 0.0);
+	Path(const Path &path);
 	~Path();
 	double getLength() const;
-	Eigen::VectorXd getConfiguration(double s);
-	Eigen::VectorXd getPathVelocity(double s);
-	Eigen::VectorXd getPathAcceleration(double s);
+	Eigen::VectorXd getConfig(double s) const;
+	Eigen::VectorXd getConfigDeriv(double s) const;
+	Eigen::VectorXd getConfigDeriv2(double s) const;
 private:
-	PathSegment* getPathSegment(double &s);
-
+	PathSegment* getPathSegment(double &s) const;
+	
 	double length;
-public:
 	std::list<PathSegment*> pathSegments;
-
 };
