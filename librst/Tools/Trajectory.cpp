@@ -1,3 +1,41 @@
+/*
+ * Copyright (c) 2011, Georgia Tech Research Corporation
+ * All rights reserved.
+ *
+ * Author: Tobias Kunz <tobias@gatech.edu>
+ * Date: 10/2011
+ *
+ * Humanoid Robotics Lab      Georgia Institute of Technology
+ * Director: Mike Stilman     http://www.golems.org
+ *
+ * Algorithm details and publications:
+ * http://www.golems.org/node/1570
+ *
+ * This file is provided under the following "BSD-style" License:
+ *   Redistribution and use in source and binary forms, with or
+ *   without modification, are permitted provided that the following
+ *   conditions are met:
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+ *   CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ *   INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ *   MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ *   DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ *   CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ *   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+ *   USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+ *   AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ *   LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ *   ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *   POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #include "Trajectory.h"
 
 using namespace std;
@@ -6,7 +44,7 @@ using namespace Eigen;
 // Partially based on
 // John J. Craig. Introduction to Robotics - Mechanics and Control, 3rd Edition. Chapter 7.3
 
-Trajectory::Trajectory(const list<VectorXd> &_path, const VectorXd &maxVelocity, const VectorXd &maxAcceleration, bool slowDown, bool removeWayPoints) :
+Trajectory::Trajectory(const list<VectorXd> &_path, const VectorXd &maxVelocity, const VectorXd &maxAcceleration, double minWayPointSeparation) :
 	path(_path.begin(), _path.end()),
 	velocities(path.size() - 1),
 	accelerations(path.size()),
@@ -14,6 +52,53 @@ Trajectory::Trajectory(const list<VectorXd> &_path, const VectorXd &maxVelocity,
 	blendDurations(path.size()),
 	duration(0.0)
 {
+	bool removeWayPoints = false;
+	if(minWayPointSeparation > 0.0) {
+		removeWayPoints = true;
+	}
+
+	// remove waypoints that are too close together
+	while(removeWayPoints) {
+		removeWayPoints = false;
+
+		vector<VectorXd>::iterator it = path.begin();
+		vector<VectorXd>::iterator next = it;
+		if(next != path.end())
+			next++;
+		while(next != path.end()) {
+			if((*it - *next).norm() < minWayPointSeparation) {
+				removeWayPoints = true;
+				vector<VectorXd>::iterator nextNext = next;
+				nextNext++;
+				if(it == path.begin()) {
+					it = path.erase(next);
+				}
+				else if(nextNext == path.end()) {
+					it = path.erase(it);
+				}
+				else {
+					VectorXd newViaPoint = 0.5 * (*it + *next);
+					it = path.erase(it);
+					it = path.insert(it, newViaPoint);
+					it++;
+					it = path.erase(it);
+				}
+				next = it;
+				if(next != path.end())
+					next++;
+			}
+			else {
+				it = next;
+				next++;
+			}
+		}
+
+		velocities.resize(path.size() - 1);
+		accelerations.resize(path.size());
+		durations.resize(path.size() - 1);
+		blendDurations.resize(path.size());
+	}
+
 	// calculate time between waypoints and initial velocities of linear segments
 	for(unsigned int i = 0; i < path.size() - 1; i++) {
 		durations[i] = 0.0;
@@ -23,81 +108,47 @@ Trajectory::Trajectory(const list<VectorXd> &_path, const VectorXd &maxVelocity,
 		velocities[i] = (path[i+1] - path[i]) / durations[i];
 	}
 
-	if(slowDown) {
-		
-		vector<double> slowDownFactors(path.size() - 1, 1.0);
+	int numBlendsSlowedDown = numeric_limits<int>::max();
+	while(numBlendsSlowedDown > 1) {
+		numBlendsSlowedDown = 0;
+		vector<double> slowDownFactors(path.size(), 1.0);
 
 		for(unsigned int i = 0; i < path.size(); i++) {
-			// calculate initial blend duration
+			// calculate blend duration and acceleration
 			VectorXd previousVelocity = (i == 0) ? VectorXd::Zero(path[i].size()) : velocities[i-1];
 			VectorXd nextVelocity = (i == path.size() - 1) ? VectorXd::Zero(path[i].size()) : velocities[i];
 			blendDurations[i] = 0.0;
 			for(int j = 0; j < path[i].size(); j++) {
 				blendDurations[i] = max(blendDurations[i], abs(nextVelocity[j] - previousVelocity[j]) / maxAcceleration[j]);
+				accelerations[i] = (nextVelocity - previousVelocity) / blendDurations[i];
 			}
 
-			// calculate maximum allowable blend duration for initial linear velocities
-			double maxDuration = numeric_limits<double>::max();
-			if(i > 0) {
-				maxDuration = min(maxDuration, durations[i-1]);
-			}
-			if(i < path.size() - 1) {
-				maxDuration = min(maxDuration, durations[i]);
-			}
-			
-			// calculate slow down factors for neighboring linear velocities such that
-			// the blend phase replaces at most half of the neighboring linear segments
-			if(blendDurations[i] > maxDuration) {
-				double slowDownFactor = sqrt(maxDuration / blendDurations[i]);
-				if(i > 0) {
-					slowDownFactors[i-1] = min(slowDownFactors[i-1], slowDownFactor);
-				}
-				if(i < path.size() - 1) {
-					slowDownFactors[i] = slowDownFactor;
-				}
+			// calculate slow down factor such that the blend phase replaces at most half of the neighboring linear segments
+			const double eps = 0.000001;
+			if((i > 0 && blendDurations[i] > durations[i-1] + eps && blendDurations[i-1] + blendDurations[i] > 2.0 * durations[i-1] + eps)
+				|| i < path.size() - 1 && blendDurations[i] > durations[i] + eps && blendDurations[i] + blendDurations[i+1] > 2.0 * durations[i] + eps)
+			{
+				numBlendsSlowedDown++;
+				const double maxDuration = min(i == 0 ? numeric_limits<double>::max() : durations[i-1],
+					i == path.size() - 1 ? numeric_limits<double>::max() : durations[i]);
+				slowDownFactors[i] = sqrt(maxDuration / blendDurations[i]);
 			}
 		}
 
 		// apply slow down factors to linear segments
 		for(unsigned int i = 0; i < path.size() - 1; i++) {
-			velocities[i] *= slowDownFactors[i];
-			durations[i] /= slowDownFactors[i];
+			velocities[i] *= min(slowDownFactors[i], slowDownFactors[i+1]);
+			durations[i] /= min(slowDownFactors[i], slowDownFactors[i+1]);
 		}
-
 	}
-
-
-
-	// calculate final blend durations
-	valid = true;
-	for(unsigned int i = 0; i < path.size(); i++) {
-		VectorXd previousVelocity = (i == 0) ? VectorXd::Zero(path[i].size()) : velocities[i-1];
-		VectorXd nextVelocity = (i == path.size() - 1) ? VectorXd::Zero(path[i].size()) : velocities[i];
-		blendDurations[i] = 0.0;
-		for(int j = 0; j < path[i].size(); j++) {
-			blendDurations[i] = max(blendDurations[i], abs(nextVelocity[j] - previousVelocity[j]) / maxAcceleration[j]);
-		}
-		if((i > 0 && blendDurations[i] > durations[i-1] + 0.000001)
-			|| (i < path.size() - 1 && blendDurations[i] > durations[i] + 0.000001))
-		{
-			valid = false;
-		}
-
-		accelerations[i] = (nextVelocity - previousVelocity) / blendDurations[i];
-	}
-
-
+	
 	// calculate total time of trajectory
 	for(unsigned int i = 0; i < path.size() - 1; i++) {
 		duration += durations[i];
 	}
-	duration += 0.5 * blendDurations.front();
-	duration += 0.5 * blendDurations.back();
+	duration += 0.5 * blendDurations.front() + 0.5 * blendDurations.back();
 }
 
-bool Trajectory::isValid() {
-	return valid;
-}
 
 VectorXd Trajectory::getPosition(double time) const {
 	if(time > duration) {
