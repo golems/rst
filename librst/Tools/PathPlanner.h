@@ -26,7 +26,7 @@ private:
 	bool copyWorld;
 	bool planSingleTreeRrt(int robot, const std::vector<int> &links, const Eigen::VectorXd &start, const Eigen::VectorXd &goal, std::list<Eigen::VectorXd> &path, bool connect, unsigned int maxNodes) const;
 	bool planBidirectionalRrt(int robot, const std::vector<int> &links, const Eigen::VectorXd &start, const Eigen::VectorXd &goal, std::list<Eigen::VectorXd> &path, bool connect, unsigned int maxNodes) const;
-	inline void randomInRange(double min, double max);
+	inline double randomInRange(double min, double max);
 };
 
 
@@ -90,7 +90,7 @@ void PathPlanner<R>::smoothPath(int robotId, std::vector<int> linkIds, list<Eige
 }
 
 template <class R>
-inline void PathPlanner<R>::randomInRange(double min, double max) {
+inline double PathPlanner<R>::randomInRange(double min, double max) {
 	return min + ((max-min) * ((double)rand() / ((double)RAND_MAX + 1)));
 }
 

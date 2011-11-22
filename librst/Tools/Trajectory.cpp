@@ -41,9 +41,6 @@
 using namespace std;
 using namespace Eigen;
 
-// Partially based on
-// John J. Craig. Introduction to Robotics - Mechanics and Control, 3rd Edition. Chapter 7.3
-
 Trajectory::Trajectory(const list<VectorXd> &_path, const VectorXd &maxVelocity, const VectorXd &maxAcceleration, double minWayPointSeparation) :
 	path(_path.begin(), _path.end()),
 	velocities(path.size() - 1),
