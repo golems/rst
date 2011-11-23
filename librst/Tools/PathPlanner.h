@@ -165,7 +165,7 @@ template <class R>
 bool PathPlanner<R>::planSingleTreeRrt(int robot, const std::vector<int> &links, const Eigen::VectorXd &start, const Eigen::VectorXd &goal, std::list<Eigen::VectorXd> &path, bool connect, unsigned int maxNodes) const {
 
 	R rrt(world, robot, links, start, stepsize);
-	R::StepResult result = R::STEP_PROGRESS;
+	typename R::StepResult result = R::STEP_PROGRESS;
 	double smallestGap = DBL_MAX;
 	while (result != RRT::STEP_REACHED) {
 		if(connect) {
