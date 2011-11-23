@@ -57,7 +57,7 @@ template <class R>
 bool PathPlanner<R>::checkPathSegment(int robotId, const vector<int> &linkIds, const Eigen::VectorXd &config1, const Eigen::VectorXd &config2) const {
 	int n = (int)((config2 - config1).norm() / stepsize);
 	for(int i = 0; i < n; i++) {
-		VectorXd conf = (double)(n - i)/(double)n * config1 + (double)(i)/(double)n * config2;
+		Eigen::VectorXd conf = (double)(n - i)/(double)n * config1 + (double)(i)/(double)n * config2;
 		world->robots[robotId]->setConf(linkIds, conf, true);
 		if(world->checkCollisions()) {
 			return false;
@@ -68,8 +68,8 @@ bool PathPlanner<R>::checkPathSegment(int robotId, const vector<int> &linkIds, c
 
 template <class R>
 void PathPlanner<R>::smoothPath(int robotId, std::vector<int> linkIds, list<Eigen::VectorXd> &path) const {
-	list<VectorXd>::iterator config1, config2;
-	list<VectorXd>::iterator temp = path.begin();
+	list<Eigen::VectorXd>::iterator config1, config2;
+	list<Eigen::VectorXd>::iterator temp = path.begin();
 	if(temp == path.end()) return;
 
 	while(true) {
