@@ -29,6 +29,7 @@ void PathShortener::Initialize(  World &world,
  */
 void PathShortener::BruteForce( std::list< Eigen::VectorXd > &path, double stepSize )
 {
+   printf("--> Start Brute Force Shortener \n");  
    srand(time(NULL));
 
    mStepSize = stepSize;
@@ -41,7 +42,7 @@ void PathShortener::BruteForce( std::list< Eigen::VectorXd > &path, double stepS
    list<Eigen::VectorXd>::iterator node2Iter;
 
    numPoints = path.size();
-   numChecks = numPoints * 100;
+   numChecks = numPoints * 2;
 
    // Number of checks
    for( int count = 0; count < numChecks; count++ )
@@ -113,8 +114,8 @@ void PathShortener::BruteForce( std::list< Eigen::VectorXd > &path, double stepS
 
    }   
 
-   mBruteForcePath = path;   
-
+   mBruteForcePath = path; 
+   printf("End Brute Force Shortener \n");  
 }
 
 
