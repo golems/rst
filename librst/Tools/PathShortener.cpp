@@ -102,9 +102,11 @@ void PathShortener::BruteForce( std::list< Eigen::VectorXd > &path, double stepS
         }
         else
         {  if( newMidNodes == oldMidNodes )
-           { printf("Okay old and new are equal, I can live with it \n"); }
+           { //printf("Okay old and new are equal, I can live with it \n"); 
+           }
            else
-           { printf("--(!) What the heck? This is weird -- Check the BruteForce Shortener! \n");} 
+           { //printf("--(!) What the heck? This is weird -- Check the BruteForce Shortener! \n");
+           } 
         }
       //printf("[%d] End path size: %d \n", count, path.size() );
       } //-- end if result true
