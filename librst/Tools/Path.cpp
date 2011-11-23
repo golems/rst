@@ -26,8 +26,10 @@ Path::Path(const list<VectorXd> &path, double maxDeviation) :
 			startConfig = blendSegment->getConfig(blendSegment->getLength());
 
 			//debug
-			if(abs((endConfig - *config1).normalized().dot((*config2 - endConfig).normalized()) - 1.0) > 0.0001
-				|| abs((startConfig - *config2).normalized().dot((*config3 - startConfig).normalized()) - 1.0) > 0.0001) {
+			if(((endConfig - *config1).norm() > 0.000001 && (*config2 - endConfig).norm() > 0.000001
+				&& abs((endConfig - *config1).normalized().dot((*config2 - endConfig).normalized()) - 1.0) > 0.000001)
+				|| ((startConfig - *config2).norm() > 0.000001 && (*config3 - startConfig).norm() > 0.000001
+				&& abs((startConfig - *config2).normalized().dot((*config3 - startConfig).normalized()) - 1.0) > 0.000001)) {
 					cout << "error" << endl;
 			}
 		}

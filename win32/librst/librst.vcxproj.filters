@@ -95,6 +95,9 @@
     <ClCompile Include="..\..\librst\Tools\Trajectory2.cpp">
       <Filter>Tools</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\librst\Tools\PathShortener.cpp">
+      <Filter>Tools</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\librst\RSTApp.h" />
@@ -213,6 +216,9 @@
       <Filter>Tools</Filter>
     </ClInclude>
     <ClInclude Include="..\..\librst\Tools\Trajectory2.h">
+      <Filter>Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librst\Tools\PathShortener.h">
       <Filter>Tools</Filter>
     </ClInclude>
   </ItemGroup>

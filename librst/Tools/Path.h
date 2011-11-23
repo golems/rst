@@ -72,7 +72,7 @@ class CircularPathSegment : public PathSegment
 {
 public:
 	CircularPathSegment(const Eigen::VectorXd &start, const Eigen::VectorXd &intersection, const Eigen::VectorXd &end, double maxDeviation) {
-		if((intersection - start).norm() < 0.000000001 || (end - intersection).norm() < 0.000000001) {
+		if((intersection - start).norm() < 0.000001 || (end - intersection).norm() < 0.000001) {
 			length = 0.0;
 			radius = 1.0;
 			center = intersection;
@@ -84,8 +84,18 @@ public:
 		const Eigen::VectorXd startDirection = (intersection - start).normalized();
 		const Eigen::VectorXd endDirection = (end - intersection).normalized();
 
+		if((startDirection - endDirection).norm() < 0.000001) {
+			length = 0.0;
+			radius = 1.0;
+			center = intersection;
+			x = Eigen::VectorXd::Zero(start.size());
+			y = Eigen::VectorXd::Zero(start.size());
+			return;
+		}
+
 		double distance = std::min((start - intersection).norm(), (end - intersection).norm());
 		const double angle = acos(startDirection.dot(endDirection));
+
 		distance = std::min(distance, maxDeviation * sin(0.5 * angle) / (1.0 - cos(0.5 * angle)));  // enforce max deviation
 
 		radius = distance / tan(0.5 * angle);
