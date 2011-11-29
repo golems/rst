@@ -65,13 +65,12 @@ double Path::getLength() const {
 
 PathSegment* Path::getPathSegment(double &s) const {
 	list<PathSegment*>::const_iterator it = pathSegments.begin();
-	list<PathSegment*>::const_iterator next = it;
-	next++;
-	while(next != pathSegments.end() && s > (*it)->getLength()) {
+	while(it != pathSegments.end() && s >= (*it)->getLength()) {
 		s -= (*it)->getLength();
-
-		it = next;
-		next++;
+		it++;
+	}
+	if(it == pathSegments.end()) {
+		it--;
 	}
 	return *it;
 }
@@ -91,8 +90,8 @@ VectorXd Path::getConfigDeriv2(double s) const {
 	return pathSegment->getConfigDeriv2(s);
 }
 
-double Path::getNextSwitchingPoint(double s) const {
+double Path::getNextSwitchingPoint(double s, bool &discontinuity) const {
 	double localPathPos = s;
 	const PathSegment* pathSegment = getPathSegment(localPathPos);
-	return pathSegment->getNextSwitchingPoint(localPathPos) + (s - localPathPos);
+	return pathSegment->getNextSwitchingPoint(localPathPos, discontinuity) + (s - localPathPos);
 }

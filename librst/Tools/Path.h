@@ -25,7 +25,7 @@ public:
 	virtual Eigen::VectorXd getConfig(double s) const = 0;
 	virtual Eigen::VectorXd getConfigDeriv(double s) const = 0;
 	virtual Eigen::VectorXd getConfigDeriv2(double s) const = 0;
-	virtual double getNextSwitchingPoint(double s) const = 0;
+	virtual double getNextSwitchingPoint(double s, bool &discontinuity) const = 0;
 	virtual PathSegment* clone() const = 0;
 protected:
 	double length;
@@ -55,7 +55,8 @@ public:
 		return Eigen::VectorXd::Zero(start.size());
 	}
 
-	double getNextSwitchingPoint(double /* s */) const {
+	double getNextSwitchingPoint(double /* s */, bool &discontinuity) const {
+		discontinuity = true;
 		return length;
 	}
 
@@ -143,12 +144,14 @@ public:
 		return - 1.0 / radius * (x * cos(angle) + y * sin(angle));
 	}
 
-	double getNextSwitchingPoint(double s) const {
+	double getNextSwitchingPoint(double s, bool &discontinuity) const {
+		discontinuity = false;
 		for(std::list<double>::const_iterator it = switchingPoints.begin(); it != switchingPoints.end(); it++) {
 			if(*it > s) {
 				return *it;
 			}
 		}
+		discontinuity = true;
 		return length;
 	}
 
@@ -175,7 +178,7 @@ public:
 	Eigen::VectorXd getConfig(double s) const;
 	Eigen::VectorXd getConfigDeriv(double s) const;
 	Eigen::VectorXd getConfigDeriv2(double s) const;
-	double getNextSwitchingPoint(double s) const;
+	double getNextSwitchingPoint(double s, bool &discontinuity) const;
 private:
 	PathSegment* getPathSegment(double &s) const;
 	
