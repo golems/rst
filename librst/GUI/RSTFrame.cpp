@@ -495,7 +495,7 @@ void RSTFrame::OnTimeScroll(wxScrollEvent& event){
 	updateTimeValue(tCurrent,true);
 }
 
-void RSTFrame::AddWorld(World* world){
+void RSTFrame::AddWorld(World* world) {
 	RSTimeSlice* tsnew = new RSTimeSlice(world);
 	timeVector.push_back(tsnew);
 	tMax += tIncrement;

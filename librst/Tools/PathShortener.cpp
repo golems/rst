@@ -68,11 +68,10 @@ void PathShortener::BruteForce( std::list< Eigen::VectorXd > &path, double stepS
          node2Index = nodeAuxIndex; }
       
       //-- Check
-      node1Iter = path.begin(); node2Iter = path.begin();
+      node1Iter = path.begin();
       advance( node1Iter, node1Index );
-      advance( node2Iter, node2Index );
-      Eigen::VectorXd node1 = *node1Iter;
-      Eigen::VectorXd node2 = *node2Iter;
+	  node2Iter = node1Iter;
+      advance( node2Iter, node2Index - node1Index);
 
       bool result = CheckPathSegment( *node1Iter, *node2Iter );
       //printf("[%d] Start path size: %d \n", count, path.size() );
@@ -96,7 +95,7 @@ void PathShortener::BruteForce( std::list< Eigen::VectorXd > &path, double stepS
            for( int j = 1; j <= newMidNodes; j++ )
            {  list<Eigen::VectorXd>::iterator temp = path.begin(); 
               advance( temp, node1Index + j );
-              Eigen::VectorXd conf = (double)(n - j)/(double)n * node1 + (double)(j)/(double)n * node2;
+              Eigen::VectorXd conf = (double)(n - j)/(double)n *  *node1Iter + (double)(j)/(double)n * *node2Iter;
               path.insert( temp, conf );
            }
            

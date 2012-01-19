@@ -92,10 +92,10 @@
     <ClCompile Include="..\..\librst\Tools\Path.cpp">
       <Filter>Tools</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\librst\Tools\Trajectory2.cpp">
+    <ClCompile Include="..\..\librst\Tools\PathShortener.cpp">
       <Filter>Tools</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\librst\Tools\PathShortener.cpp">
+    <ClCompile Include="..\..\librst\Tools\ParabolicBlendTrajectory.cpp">
       <Filter>Tools</Filter>
     </ClCompile>
   </ItemGroup>
@@ -215,10 +215,10 @@
     <ClInclude Include="..\..\librst\Tools\Path.h">
       <Filter>Tools</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\librst\Tools\Trajectory2.h">
+    <ClInclude Include="..\..\librst\Tools\PathShortener.h">
       <Filter>Tools</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\librst\Tools\PathShortener.h">
+    <ClInclude Include="..\..\librst\Tools\ParabolicBlendTrajectory.h">
       <Filter>Tools</Filter>
     </ClInclude>
   </ItemGroup>

@@ -116,7 +116,7 @@ void PathPlanner<R>::smoothPath2( int robotId, std::vector<int> linkIds, list<Ei
 
       do{ node_2 = (int) randomInRange( minNode + 1, maxNode - 1 ); } while( node_2 == node_1 );
 
-      if( node_2 < node_1 ) 
+      if( node_2 < node_1 )
       {  aux_node = node_1;
          node_1 = node_2;
          node_2 = aux_node; }
