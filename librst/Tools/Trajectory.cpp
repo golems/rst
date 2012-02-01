@@ -47,6 +47,18 @@ using namespace std;
 const double Trajectory::timeStep = 0.001;
 const double Trajectory::eps = 0.000001;
 
+static double squared(double d) {
+	return d * d;
+}
+
+static string toString(int number)
+{
+   stringstream ss;//create a stringstream
+   ss << number;//add number to the stream
+   return ss.str();//return a string with the contents of the stream
+}
+
+
 Trajectory::Trajectory(const Path &path, const VectorXd &maxVelocity, const VectorXd &maxAcceleration) :
 	path(path),
 	maxVelocity(maxVelocity),
@@ -56,26 +68,27 @@ Trajectory::Trajectory(const Path &path, const VectorXd &maxVelocity, const Vect
 	cachedTime(numeric_limits<double>::max())
 {
 	// debug
-	{
-	ofstream file("maxVelocity.txt");
-	for(double s = 0.0; s < path.getLength(); s += 0.0001) {
-		double maxVelocity = getAccelerationMaxPathVelocity(s);
-		if(maxVelocity == numeric_limits<double>::infinity())
-			maxVelocity = 10.0;
-		file << s << "  " << maxVelocity << "  " << getVelocityMaxPathVelocity(s) << endl;
-	}
-	file.close();
-	}
+	//{
+	//ofstream file("maxVelocity.txt");
+	//for(double s = 0.0; s < path.getLength(); s += 0.0001) {
+	//	double maxVelocity = getAccelerationMaxPathVelocity(s);
+	//	if(maxVelocity == numeric_limits<double>::infinity())
+	//		maxVelocity = 10.0;
+	//	file << s << "  " << maxVelocity << "  " << getVelocityMaxPathVelocity(s) << endl;
+	//}
+	//file.close();
+	//}
 
 	list<TrajectoryStep> startTrajectory;
 	startTrajectory.push_back(TrajectoryStep(0.0, 0.0));
 	double afterAcceleration = getMinMaxPathAcceleration(0.0, 0.0, true);
-	while(!integrateForward(startTrajectory, afterAcceleration)) {
+	while(!integrateForward(startTrajectory, afterAcceleration) && valid) {
 		double beforeAcceleration;
 		TrajectoryStep switchingPoint;
 		if(getNextSwitchingPoint(startTrajectory.back().pathPos, switchingPoint, beforeAcceleration, afterAcceleration)) {
 			break;
 		}
+		//cout << "set arrow from " << switchingPoint.pathPos << ", " << switchingPoint.pathVel - 0.8 << " to " << switchingPoint.pathPos << ", " << switchingPoint.pathVel - 0.3 << endl;
 		list<TrajectoryStep> trajectory;
 		trajectory.push_back(switchingPoint);
 		integrateBackward(trajectory, startTrajectory, beforeAcceleration);
@@ -87,8 +100,6 @@ Trajectory::Trajectory(const Path &path, const VectorXd &maxVelocity, const Vect
 	integrateBackward(endTrajectory, startTrajectory, beforeAcceleration);
 	
 	this->trajectory = startTrajectory;
-
-
 
 	// calculate timing
 	list<TrajectoryStep>::iterator previous = trajectory.begin();
@@ -102,11 +113,11 @@ Trajectory::Trajectory(const Path &path, const VectorXd &maxVelocity, const Vect
 	}
 
 	// debug
-	ofstream file("trajectory.txt");
-	for(list<TrajectoryStep>::iterator it = trajectory.begin(); it != trajectory.end(); it++) {
-		file << it->pathPos << "  " << it->pathVel << endl;
-	}
-	file.close();
+	//ofstream file("trajectory.txt");
+	//for(list<TrajectoryStep>::iterator it = trajectory.begin(); it != trajectory.end(); it++) {
+	//	file << it->pathPos << "  " << it->pathVel << endl;
+	//}
+	//file.close();
 }
 
 Trajectory::~Trajectory(void) {
@@ -192,12 +203,14 @@ bool Trajectory::getNextAccelerationSwitchingPoint(double pathPos, TrajectorySte
 
 bool Trajectory::getNextVelocitySwitchingPoint(double pathPos, TrajectoryStep &nextSwitchingPoint, double &beforeAcceleration, double &afterAcceleration) {
 	const double stepSize = 0.001;
-	const double accuracy = 0.00001;
+	const double accuracy = 0.000001;
 
 	bool start = false;
 	pathPos -= stepSize;
 	do {
 		pathPos += stepSize;
+
+
 		if(getMinMaxPhaseSlope(pathPos, getVelocityMaxPathVelocity(pathPos), false) >= getVelocityMaxPathVelocityDeriv(pathPos)) {
 			start = true;
 		}
@@ -247,10 +260,11 @@ bool Trajectory::integrateForward(list<TrajectoryStep> &trajectory, double accel
 		double oldPathPos = pathPos;
 		double oldPathVel = pathVel;
 		
-		pathPos += timeStep * pathVel;
 		pathVel += timeStep * acceleration;
+		pathPos += timeStep * 0.5 * (oldPathVel + pathVel);
 
-		if(nextDiscontinuity != switchingPoints.end() && pathPos > nextDiscontinuity->first + eps) {
+
+		if(nextDiscontinuity != switchingPoints.end() && pathPos > nextDiscontinuity->first) {
 			pathVel = oldPathVel + (nextDiscontinuity->first + eps - oldPathPos) * (pathVel - oldPathVel) / (pathPos - oldPathPos);
 			pathPos = nextDiscontinuity->first + eps;
 		}
@@ -302,7 +316,7 @@ bool Trajectory::integrateForward(list<TrajectoryStep> &trajectory, double accel
 					before = midpoint;
 			}
 			trajectory.push_back(TrajectoryStep(before, trajectory.back().pathVel + slope * (before - trajectory.back().pathPos)));
-
+		
 			if(getAccelerationMaxPathVelocity(after) < getVelocityMaxPathVelocity(after)) {
 				if(after > nextDiscontinuity->first) {
 					return false;
@@ -329,12 +343,12 @@ void Trajectory::integrateBackward(list<TrajectoryStep> &trajectory, list<Trajec
 
 	while(true)
 	{
-		pathPos -= timeStep * pathVel;
-		pathVel -= timeStep * acceleration;
-
-		//double oldPathVel = pathVel;
+		//pathPos -= timeStep * pathVel;
 		//pathVel -= timeStep * acceleration;
-		//pathPos -= timeStep * 0.5 * (oldPathVel + pathVel);
+
+		double oldPathVel = pathVel;
+		pathVel -= timeStep * acceleration;
+		pathPos -= timeStep * 0.5 * (oldPathVel + pathVel);
 
 		trajectory.push_front(TrajectoryStep(pathPos, pathVel));
 		acceleration = getMinMaxPathAcceleration(pathPos, pathVel, false);
@@ -349,12 +363,15 @@ void Trajectory::integrateBackward(list<TrajectoryStep> &trajectory, list<Trajec
 			before++;
 		}
 
+		bool error = false;
+
 		if(before != startTrajectory.rbegin() && pathVel >= before->pathVel + getSlope(before.base()) * (pathPos - before->pathPos)) {
 			TrajectoryStep overshoot = trajectory.front();
 			trajectory.pop_front();
 			list<TrajectoryStep>::iterator after = before.base();
 			TrajectoryStep intersection = getIntersection(startTrajectory, after, overshoot, trajectory.front());
-
+			//cout << "set arrow from " << intersection.pathPos << ", " << intersection.pathVel - 0.8 << " to " << intersection.pathPos << ", " << intersection.pathVel - 0.3 << endl;
+		
 			if(after != startTrajectory.end()) {
 				startTrajectory.erase(after, startTrajectory.end());
 				startTrajectory.push_back(intersection);
@@ -363,7 +380,41 @@ void Trajectory::integrateBackward(list<TrajectoryStep> &trajectory, list<Trajec
 
 			return;
 		}
-		else if(pathVel > getAccelerationMaxPathVelocity(pathPos) || pathVel > getVelocityMaxPathVelocity(pathPos)) {
+		else if(pathVel > getAccelerationMaxPathVelocity(pathPos) + eps || pathVel > getVelocityMaxPathVelocity(pathPos) + eps) {
+			// find more accurate intersection with max-velocity curve using bisection
+			TrajectoryStep overshoot = trajectory.front();
+			trajectory.pop_front();
+			double slope = getSlope(overshoot, trajectory.front());
+			double before = overshoot.pathPos;
+			double after = trajectory.front().pathPos;
+			while(after - before > 0.00001) {
+				const double midpoint = 0.5 * (before + after);
+				double midpointPathVel = overshoot.pathVel + slope * (midpoint - overshoot.pathPos);
+
+				if(midpointPathVel > getAccelerationMaxPathVelocity(midpoint) || midpointPathVel > getVelocityMaxPathVelocity(midpoint))
+					before = midpoint;
+				else
+					after = midpoint;
+			}
+			trajectory.push_front(TrajectoryStep(after, overshoot.pathVel + slope * (after - overshoot.pathPos)));
+
+			if(getAccelerationMaxPathVelocity(before) < getVelocityMaxPathVelocity(before)) {
+				if(trajectory.front().pathVel > getAccelerationMaxPathVelocity(before) + 0.0001) {
+					error = true;
+				}
+				else if(getMinMaxPhaseSlope(trajectory.front().pathPos, trajectory.front().pathVel, false) < getAccelerationMaxPathVelocityDeriv(trajectory.front().pathPos)) { 
+					error = true;
+				}
+			}
+			else {
+				if(getMinMaxPhaseSlope(trajectory.back().pathPos, trajectory.back().pathVel, false) < getVelocityMaxPathVelocityDeriv(trajectory.back().pathPos)) {
+					error = true;
+				}
+			}
+			
+		}
+
+		if(error) {
 			ofstream file("trajectory.txt");
 			for(list<TrajectoryStep>::iterator it = startTrajectory.begin(); it != startTrajectory.end(); it++) {
 				file << it->pathPos << "  " << it->pathVel << endl;
@@ -518,6 +569,58 @@ VectorXd Trajectory::getPosition(double time) const {
 	list<TrajectoryStep>::const_iterator previous = it;
 	previous--;
 	
-	const double pathPos = previous->pathPos + (time - previous->time) * (previous->pathVel + it->pathVel) / 2.0;
+	//const double pathPos = previous->pathPos + (time - previous->time) * (previous->pathVel + it->pathVel) / 2.0;
+	
+	double timeStep = it->time - previous->time;
+	const double acceleration = (it->pathPos - previous->pathPos - timeStep * previous->pathVel) / (timeStep * timeStep);
+
+	timeStep = time - previous->time;
+	const double pathPos = previous->pathPos + timeStep * previous->pathVel + timeStep * timeStep * acceleration; 
+	
 	return path.getConfig(pathPos);
+}
+
+VectorXd Trajectory::getVelocity(double time) const {
+	list<TrajectoryStep>::const_iterator it = getTrajectorySegment(time);
+	list<TrajectoryStep>::const_iterator previous = it;
+	previous--;
+	
+	//const double pathPos = previous->pathPos + (time - previous->time) * (previous->pathVel + it->pathVel) / 2.0;
+	
+	double timeStep = it->time - previous->time;
+	const double acceleration = (it->pathPos - previous->pathPos - timeStep * previous->pathVel) / (timeStep * timeStep);
+
+	timeStep = time - previous->time;
+	const double pathPos = previous->pathPos + timeStep * previous->pathVel + timeStep * timeStep * acceleration; 
+	const double pathVel = previous->pathVel + timeStep * acceleration;
+	
+	return path.getTangent(pathPos) * pathVel;
+}
+
+double Trajectory::getMaxAccelerationError() {
+	double maxAccelerationError = 0.0;
+
+	for(double time = 0.0; time < getDuration(); time += 0.000001) {
+		list<TrajectoryStep>::const_iterator it = getTrajectorySegment(time);
+		list<TrajectoryStep>::const_iterator previous = it;
+		previous--;
+
+		double timeStep = it->time - previous->time;
+		const double pathAcceleration = (it->pathPos - previous->pathPos - timeStep * previous->pathVel) / (timeStep * timeStep);
+		
+		timeStep = time - previous->time;
+		const double pathPos = previous->pathPos + timeStep * previous->pathVel + timeStep * timeStep * pathAcceleration;
+
+		const double pathVel = previous->pathVel + timeStep * pathAcceleration;
+
+		VectorXd acceleration = path.getTangent(pathPos) * pathAcceleration + path.getCurvature(pathPos) * pathVel * pathVel;
+		
+		for(int i = 0; i < acceleration.size(); i++) {
+			if(abs(acceleration[i]) > maxAcceleration[i]) {
+				maxAccelerationError = max(maxAccelerationError, abs(acceleration[i]) / maxAcceleration[i]);
+			}
+		}
+	}
+
+	return maxAccelerationError;
 }

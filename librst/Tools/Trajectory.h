@@ -50,6 +50,8 @@ public:
 	bool isValid() const;
 	double getDuration() const;
 	Eigen::VectorXd getPosition(double time) const;
+	Eigen::VectorXd getVelocity(double time) const;
+	double getMaxAccelerationError();
 
 private:
 	struct TrajectoryStep {

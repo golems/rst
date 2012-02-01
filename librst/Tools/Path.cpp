@@ -292,6 +292,6 @@ double Path::getNextSwitchingPoint(double s, bool &discontinuity) const {
 	}
 }
 
-list<pair<double, bool>> Path::getSwitchingPoints() const {
+list<pair<double, bool> > Path::getSwitchingPoints() const {
 	return switchingPoints;
 }

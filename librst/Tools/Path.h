@@ -78,10 +78,10 @@ public:
 	Eigen::VectorXd getTangent(double s) const;
 	Eigen::VectorXd getCurvature(double s) const;
 	double getNextSwitchingPoint(double s, bool &discontinuity) const;
-	std::list<std::pair<double, bool>> getSwitchingPoints() const;
+	std::list<std::pair<double, bool> > getSwitchingPoints() const;
 private:
 	PathSegment* getPathSegment(double &s) const;
 	double length;
-	std::list<std::pair<double, bool>> switchingPoints;
+	std::list<std::pair<double, bool> > switchingPoints;
 	std::list<PathSegment*> pathSegments;
 };

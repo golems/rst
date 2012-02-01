@@ -54,13 +54,10 @@ void PathShortener::BruteForce( std::list< Eigen::VectorXd > &path, double stepS
 
       do
       { 
-        node1Index = (int) RAND12( nodeMinIndex, nodeMaxIndex );
-        node2Index = (int) RAND12( nodeMinIndex, nodeMaxIndex ); 
+        node1Index = (int) RAND12( nodeMinIndex, nodeMaxIndex +1);
+        node2Index = (int) RAND12( nodeMinIndex, nodeMaxIndex +1); 
       } while( node2Index == node1Index || abs(node1Index - node2Index) < 2 );
 
-	  if(node1Index == nodeMaxIndex) {
-		  cout << "Hurra\n";
-	  }
 
       if( node2Index < node1Index ) 
       {  nodeAuxIndex = node1Index;
