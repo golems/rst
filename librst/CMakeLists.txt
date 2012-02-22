@@ -37,7 +37,6 @@ Tools/PathPlanner
 Tools/Shortener
 Tools/PathShortener
 Tools/Trajectory
-Tools/Trajectory2
 Tools/RRT
 Tools/kdtree/kdtree
 Tools/GL/GLTexture.cpp
