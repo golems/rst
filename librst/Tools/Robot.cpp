@@ -42,6 +42,7 @@
 #include <Tools/Robot.h>
 #include <Tools/GLTools.h>
 
+using namespace std;
 using namespace Eigen;
 
 Robot::Robot()

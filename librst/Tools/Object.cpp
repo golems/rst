@@ -44,6 +44,7 @@
 #include <string>
 
 const double threshold = 0.02;
+using namespace std;
 using namespace Eigen;
 
 Object::Object()

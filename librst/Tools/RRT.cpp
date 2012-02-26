@@ -48,12 +48,38 @@ RRT::RRT(World* world, int robot, const vector<int> &links, const VectorXd &root
 	robot(robot),
 	links(links),
 	ndim(links.size()),
-	stepSize(stepSize)
+	stepSize(stepSize),
+	numSamples(0),
+	numCollisions(0),
+	numNoProgress(0),
+	numStepTooLarge(0)
 {
 	srand(time(NULL));
 
 	kdTree = kd_create(ndim);
 	addNode(root, -1);
+}
+
+
+RRT::RRT(World* world, int robot, const vector<int> &links, const vector<VectorXd> &roots, double stepSize) :
+	world(world),
+	robot(robot),
+	links(links),
+	ndim(links.size()),
+	stepSize(stepSize),
+	numSamples(0),
+	numCollisions(0),
+	numNoProgress(0),
+	numStepTooLarge(0),
+	numErrorIncrease(0)
+{
+	srand(time(NULL));
+
+	kdTree = kd_create(ndim);
+
+	for(int i = 0; i < roots.size(); i++) {
+		addNode(roots[i], -1);
+	}
 }
 
 RRT::~RRT() {
@@ -95,25 +121,30 @@ RRT::StepResult RRT::tryStepFromNode(const VectorXd &qtry, int NNidx)
 	 */
 
 	VectorXd qnear = configVector[NNidx];
-
-	// Compute direction and magnitude
-	Eigen::VectorXd diff = qtry - qnear;
-	double dist = diff.norm();
-
-	if(dist < stepSize) {
+	
+	if((qtry - qnear).norm() < stepSize) {
 		return STEP_REACHED;
 	}
 
 	// Scale this vector to step_size and add to end of qnear
-	VectorXd qnew = qnear + diff * (stepSize / dist);
-	
-	if (!checkCollisions(qnew)) {
+	VectorXd qnew = qnear + stepSize * (qtry - qnear).normalized();
+	list<VectorXd> intermediatePoints;
+
+	if(!newConfig(intermediatePoints, qnew, qnear, qtry)) {
+		return STEP_COLLISION;
+	}
+	else {
+		for(list<VectorXd>::iterator it = intermediatePoints.begin(); it != intermediatePoints.end(); it++) {
+			NNidx = addNode(*it, NNidx);
+		}
 		addNode(qnew, NNidx);
 		return STEP_PROGRESS;
 	}
-	else {
-		return STEP_COLLISION;
-	}
+}
+
+// Provides a hook for child classes to alter a new config before it gets added to the tree
+bool RRT::newConfig(list<VectorXd> &intermediatePoints, VectorXd &qnew, const VectorXd &qnear, const VectorXd &qtarget) {
+	return !checkCollisions(qnew);
 }
 
 int RRT::addNode(const VectorXd &qnew, int parentId)
@@ -129,17 +160,20 @@ int RRT::addNode(const VectorXd &qnew, int parentId)
 	return id;
 }
 
-int RRT::getNearestNeighbor(const VectorXd &qsamp)
+inline int RRT::getNearestNeighbor(const VectorXd &qsamp)
 {
 	struct kdres* result = kd_nearest(kdTree, qsamp.data());
 	uintptr_t nearest = (uintptr_t)kd_res_item_data(result);
-	
+	kd_res_free(result);
 	activeNode = nearest;
 	return nearest;
 }
 
 // random # between min & max
 inline double RRT::randomInRange(double min, double max) {
+	if(min == max) {
+		return min;
+	}
 	return min + ((max-min) * ((double)rand() / ((double)RAND_MAX + 1)));
 }
 

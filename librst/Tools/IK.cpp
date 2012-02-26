@@ -36,6 +36,7 @@
 #include "IK.h"
 #include "Robot.h"
 #include <iostream>
+using namespace std;
 using namespace Eigen;
 
 bool intersect3Lines(const Vector3d &o1, const Vector3d &d1, const Vector3d &o2, const Vector3d &d2, const Vector3d &o3, const Vector3d &d3, Vector3d &intersection) {
@@ -150,6 +151,10 @@ void IK::anglesFromRotationMatrix(double &theta1, double &theta2, double &theta3
 	theta2 = -lambda - acos(n1.transpose() * A * n3);
 	theta3 = -std::atan2(n1.transpose() * A * n2, -n1.transpose() * A * n3.cross(n2));
 	theta1 = -std::atan2(n2.transpose() * A * n3, -n2.cross(n1).transpose() * A * n3);
+
+	if(theta2 < -M_PI) {
+		theta2 += 2.0 * M_PI;
+	}
 }
 
 

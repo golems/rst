@@ -65,11 +65,11 @@ public:
 	int idNum;
 	double mass;
 
-	string pathname;
-	string name;
+	std::string pathname;
+	std::string name;
 
-	int findLink(string name);
-	int Load(string, World*);
+	int findLink(std::string name);
+	int Load(std::string, World*);
 	void setConf(const Eigen::VectorXd &conf, bool updateCollisionModel = true);
 	void setConf(const std::vector<int> &links, const Eigen::VectorXd &conf, bool updateCollisionModel = true);
 	void getConf(Eigen::VectorXd &conf);

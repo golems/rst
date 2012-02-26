@@ -58,7 +58,7 @@ public:
 
 	Robot *robot;
 	Link *parent;
-	vector<Link*> children;
+	std::vector<Link*> children;
 	Object* attachedObject;
 	Eigen::Transform<double, 3, Eigen::Affine> attachedObjectPose;
 

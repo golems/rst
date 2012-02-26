@@ -76,8 +76,8 @@ public:
 
 	void Draw();
 	void DeleteModels();
-	int findRobot(string name);
-	int findObject(string name);
+	int findRobot(std::string name);
+	int findObject(std::string name);
 	void updateAllCollisionModels();
 	void updateCollisionModel(Object *ob);
 	void detectCollisions();
@@ -86,8 +86,8 @@ public:
 	void planeDetect();
 	void CreateEntity(Object* object);
 
-	int Save(string);
-	int Load(string);
+	int Save(std::string);
+	int Load(std::string);
 };
 
 #endif

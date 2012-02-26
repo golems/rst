@@ -36,20 +36,19 @@
 
 #include "glcommon.h"
 #include <string>
-using namespace std;
 
 class GLTexture  
 {
 public:
-	string texturename;								// The textures name
+	std::string texturename;								// The textures name
 	unsigned int texture[1];						// OpenGL's number for the texture
 	int width;										// Texture's width
 	int height;										// Texture's height
 	void Use();										// Binds the texture for use
 	void BuildColorTexture(unsigned char r, unsigned char g, unsigned char b);	// Sometimes we want a texture of uniform color
-	void LoadTGA(string name);						// Loads a targa file
-	void LoadBMP(string name);						// Loads a bitmap file
-	void Load(string name);							// Load the texture
+	void LoadTGA(std::string name);						// Loads a targa file
+	void LoadBMP(std::string name);						// Loads a bitmap file
+	void Load(std::string name);							// Load the texture
 	GLTexture();									// Constructor
 	virtual ~GLTexture();							// Destructor
 

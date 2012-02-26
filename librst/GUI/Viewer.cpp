@@ -46,6 +46,8 @@
 #include <Tools/Link.h>
 #include <iostream>
 
+using namespace std;
+
 void Viewer::shown(wxShowEvent& WXUNUSED(evt)){
     int w, h;
     GetClientSize(&w, &h);

@@ -64,8 +64,8 @@ public:
 	World* world;
 	Model3DS	*model;
 
-	string pathname;
-	string name;
+	std::string pathname;
+	std::string name;
 	bool movable;
 	int idNum;
 	int eid;
@@ -80,7 +80,7 @@ public:
 	Object();
 	~Object();
 
-	Model3DS* LoadModel(string);
+	Model3DS* LoadModel(std::string);
 
 	void Draw();
 	void DrawPrimitive(); //will draw the primitive object

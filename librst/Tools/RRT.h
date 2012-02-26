@@ -53,15 +53,13 @@
 
 class RRT {
 public:
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
 	typedef enum {
 		STEP_COLLISION, // Collided with obstacle. No node added.
 		STEP_REACHED, // The configuration that we grow to is less than stepSize away from the node we grow from. No node added.
 		STEP_PROGRESS // One node added.
 	} StepResult;
-
-	World* world;
-	int robot;
-	std::vector<int> links;
 
 	int ndim;
 	double stepSize;
@@ -70,42 +68,53 @@ public:
 	std::vector<int> parentVector;		// vector of indices to relate configs in RRT
 	std::vector<Eigen::VectorXd> configVector; 	// vector of all visited configs
 
-	struct kdtree *kdTree;
-
 	RRT(World* world, int robot, const std::vector<int> &links, const Eigen::VectorXd &root, double stepSize = 0.02);
+	RRT(World* world, int robot, const std::vector<int> &links, const std::vector<Eigen::VectorXd> &roots, double stepSize = 0.02);
 	virtual ~RRT();
 
 	bool connect();
 	bool connect(const Eigen::VectorXd &target);
-	
 	StepResult tryStep();
-
 	StepResult tryStep(const Eigen::VectorXd &qtry);
 
 	// Tries to extend tree towards provided sample (must be overridden for MBP)
 	virtual StepResult tryStepFromNode(const Eigen::VectorXd &qtry, int NNidx);
 
-	// Adds qnew to the tree
-	int addNode(const Eigen::VectorXd &qnew, int parentId);
-
-	// returns a random configuration (may be overridden you want to do something else with sampled states)
-	virtual Eigen::VectorXd getRandomConfig();
-
-	// Returns NN to query point
-	int getNearestNeighbor(const Eigen::VectorXd &qsamp);
+	virtual bool newConfig(std::list<Eigen::VectorXd> &intermediatePoints, Eigen::VectorXd &qnew, const Eigen::VectorXd &qnear, const Eigen::VectorXd &qtarget);
 
 	double getGap(const Eigen::VectorXd &target);
 
 	// traces the path from some node to the initConfig node
 	void tracePath(int node, std::list<Eigen::VectorXd> &path, bool reverse = false);
 
+	unsigned int getSize();
+
 	// Implementation-specific function for checking collisions  (must be overridden for MBP)
 	virtual bool checkCollisions(const Eigen::VectorXd &c);
 
-	unsigned int getSize();
 
+	int numSamples;
+	int numCollisions;
+	int numNoProgress;
+	int numStepTooLarge;
+	int numErrorIncrease;
 protected:
+	World* world;
+	int robot;
+	std::vector<int> links;
+	struct kdtree *kdTree;
+
 	double randomInRange(double min, double max);
+
+	// Returns NN to query point
+	virtual int getNearestNeighbor(const Eigen::VectorXd &qsamp);
+
+	// returns a random configuration (may be overridden you want to do something else with sampled states)
+	virtual Eigen::VectorXd getRandomConfig();
+
+	// Adds qnew to the tree
+	virtual int addNode(const Eigen::VectorXd &qnew, int parentId);
+
 };
 
 #endif /* RRT_H */

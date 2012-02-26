@@ -132,7 +132,7 @@ public:
 	// Holds the material info
 	// TODO: add color support for non textured polys
 	struct Material {
-		string name;
+		std::string name;
 		//char name[PATH_LENGTH];	// The material's name
 		GLTexture tex; // The texture (this is the only outside reference in this class)
 		bool textured; // whether or not it is textured
@@ -154,7 +154,7 @@ public:
 
 	// The 3ds file can be made up of several objects
 	struct Object {
-		string name;
+		std::string name;
 		//char name[PATH_LENGTH];				// The object name
 		double *Vertexes; // The array of vertices
 		double *Normals; // The array of the normals for the vertices
@@ -170,13 +170,13 @@ public:
 		Vector rot; // The angles to rotate the object
 	};
 
-	void ReportTriangles(vector<Triangle> *trigs);
+	void ReportTriangles(std::vector<Triangle> *trigs);
 
 	GLuint modelDL;
 	GLuint colDL;
-	string modelname;
-	string name;
-	string path;
+	std::string modelname;
+	std::string name;
+	std::string path;
 	int numObjects; // Total number of objects in the model
 	int numMaterials; // Total number of materials in the model
 	int totalVerts; // Total number of vertices in the model
@@ -189,7 +189,7 @@ public:
 	double scale; // The size you want the model scaled to
 	bool lit; // True: the model is lit
 	bool visible; // True: the model gets rendered
-	void Load(string fullpath); // Loads a model
+	void Load(std::string fullpath); // Loads a model
 	void Draw(); // Draws the model
 	double Stri[3][3]; // Storing the triangle
 	FILE *bin3ds; // The binary 3ds file

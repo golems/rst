@@ -54,6 +54,7 @@
 #define M_PI 3.14159265358979323846
 #endif
 
+using namespace std;
 using namespace Eigen;
 
 World::World() {
@@ -407,19 +408,48 @@ void World::detectCollisions() {
     }
 }
 
-void World::updateAllCollisionModels(){
+void World::updateAllCollisionModels() {
 	for(unsigned int i = 0; i < entities.size(); i++) {
 		updateCollisionModel(entities[i]);
 	}
 
+
+	// deactivate collision of links with other links nearby
 	for(unsigned int i = 0; i < robots.size(); i++) {
 		Robot* r = robots[i];
-		for(unsigned int j=0; j<r->links.size(); j++) {
-			for(unsigned int k=j; k<r->links.size(); k++) {
-				Link* l1 = r->links[j];
-				Link* l2 = r->links[k];
-				if(l1->model != NULL && l2->model != NULL) {
-					vcollide.DeactivatePair(l1->eid,l2->eid);
+		for(unsigned int j = 0; j < r->links.size(); j++) {
+			Link* l = r->links[j];
+			if(l->parent && l->model) {
+				for(unsigned j = 0; j < l->parent->children.size(); j++) {
+					if(l->parent->children[j]->model) {
+						vcollide.DeactivatePair(l->eid, l->parent->children[j]->eid);
+					}
+				}
+
+				if(l->parent->parent) {
+					bool modelFound = false;
+					for(unsigned j = 0; j < l->parent->parent->children.size(); j++) {
+						if(l->parent->parent->children[j]->model) {
+							vcollide.DeactivatePair(l->eid, l->parent->parent->children[j]->eid);
+							modelFound = true;
+						}
+					}
+
+					if(!modelFound) {
+						if(l->parent->parent->parent) {
+							for(unsigned j = 0; j < l->parent->parent->parent->children.size(); j++) {
+								if(l->parent->parent->parent->children[j]->model) {
+									vcollide.DeactivatePair(l->eid, l->parent->parent->parent->children[j]->eid);
+								}
+							}
+						}
+						else if(l->parent->parent->model) {
+							vcollide.DeactivatePair(l->eid, l->parent->parent->eid);
+						}
+					}
+				}
+				else if(r->links[j]->parent->model) {
+					vcollide.DeactivatePair(r->links[j]->eid, r->links[j]->parent->eid);
 				}
 			}
 		}
