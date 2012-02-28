@@ -7,8 +7,8 @@
 #include <iostream>
 #include "Robot.h"
 
-//#ifndef PATH_PLANNER
-//#define PATH_PLANNER
+#ifndef _RST_PATH_PLANNER_
+#define _RST_PATH_PLANNER_
 
 template <class R = RRT>
 class PathPlanner {
@@ -177,4 +177,4 @@ bool PathPlanner<R>::planBidirectionalRrt(int robot, const std::vector<int> &lin
 
 
 
-//#endif
+#endif /** _RST_PATH_PLANNER_ */

@@ -25,7 +25,7 @@ void PathShortener::shortenPath(list<VectorXd> &path, double stepSize)
 
 	this->stepSize = stepSize;
 
-	const int numShortcuts = path.size() * 100;
+	const int numShortcuts = path.size() * 5;
 	
 	// Number of checks
 	for( int count = 0; count < numShortcuts; count++ ) {
