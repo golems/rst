@@ -4,6 +4,8 @@
 #include "Link.h"
 #include "World.h"
 
+#ifndef _RST_IK_
+#define _RST_IK_
 
 class IK {
 public:
@@ -26,3 +28,5 @@ private:
 	Eigen::Transform<double, 3, Eigen::Affine> T0Inverse;
 	Eigen::Transform<double, 3, Eigen::Affine> TeInverse;
 };
+
+#endif /** _RST_IK_ */
