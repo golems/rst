@@ -9,7 +9,7 @@ using namespace Eigen;
 
 PathShortener::PathShortener() {}
 
-PathShortener::PathShortener(World* world, int robotId, std::vector<int> linkIds) :
+PathShortener::PathShortener(World* world, int robotId, const std::vector<int> &linkIds) :
    world(world),
    robotId(robotId),
    linkIds(linkIds)
@@ -25,7 +25,7 @@ void PathShortener::shortenPath(list<VectorXd> &path, double stepSize)
 
 	this->stepSize = stepSize;
 
-	const int numShortcuts = path.size() * 100;
+	const int numShortcuts = path.size() * 5;
 	
 	// Number of checks
 	for( int count = 0; count < numShortcuts; count++ ) {
