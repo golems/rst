@@ -9,21 +9,20 @@ using namespace Eigen;
 
 PathShortener::PathShortener() {}
 
-PathShortener::PathShortener(World* world, int robotId, const std::vector<int> &linkIds) :
+PathShortener::PathShortener(World* world, int robotId, const std::vector<int> &linkIds, double stepSize) :
    world(world),
    robotId(robotId),
-   linkIds(linkIds)
+   linkIds(linkIds),
+   stepSize(stepSize)
 {}
 
 PathShortener::~PathShortener()
 {}
 
-void PathShortener::shortenPath(list<VectorXd> &path, double stepSize)
+void PathShortener::shortenPath(list<VectorXd> &path)
 {
-	printf("--> Start Brute Force Shortener \n");  
+	printf("--> Start Brute Force Shortener \n"); 
 	srand(time(NULL));
-
-	this->stepSize = stepSize;
 
 	const int numShortcuts = path.size() * 5;
 	
@@ -53,27 +52,42 @@ void PathShortener::shortenPath(list<VectorXd> &path, double stepSize)
 			path.splice(node2Iter, intermediatePoints);
         }
 	}
-	printf("End Brute Force Shortener \n");  
+	printf("End Brute Force Shortener \n");
 }
 
 bool PathShortener::localPlanner(list<VectorXd> &intermediatePoints, list<VectorXd>::const_iterator it1, list<VectorXd>::const_iterator it2) {
-	return !checkSegment(intermediatePoints, *it1, *it2);
+	return segmentCollisionFree(intermediatePoints, *it1, *it2);
 }
 
-// true iff collision
+// true iff collision-free
+// does not check endpoints
 // interemdiatePoints are only touched if collision-free
-bool PathShortener::checkSegment(list<VectorXd> &intermediatePoints, const VectorXd &config1, const VectorXd &config2) {
-	list<VectorXd> tempIntermediatePoints;
-	const int n = (int)((config1 - config2).norm() / stepSize) + 1; // number of intermediate segments
-	for(int i = 1; i < n; i++) {
-		const VectorXd config = (double)(n - i) / (double)n * config1 + (double)i / (double)n * config2;
-		world->robots[robotId]->setConf(linkIds, config);
-		if(world->checkCollisions()) {
-			return true;
-		}
-		tempIntermediatePoints.push_back(config);
+bool PathShortener::segmentCollisionFree(list<VectorXd> &intermediatePoints, const VectorXd &config1, const VectorXd &config2) {
+	const double length = (config1 - config2).norm();
+	if(length <= stepSize) {
+		return true;
 	}
-	intermediatePoints.clear();
-	intermediatePoints.splice(intermediatePoints.begin(), tempIntermediatePoints);
-	return false;
+
+	const int n = (int)(length / stepSize) + 1; // number of intermediate segments
+	int n1 = n / 2;
+	int n2 = n / 2;
+	if(n % 2 == 1) {
+		n2 += 1;
+	}
+
+	VectorXd midpoint = (double)n2 / (double)n * config1 + (double)n1 / (double)n * config2;
+	list<VectorXd> intermediatePoints1, intermediatePoints2;
+	world->robots[robotId]->setConf(linkIds, midpoint);
+	if(!world->checkCollisions() && segmentCollisionFree(intermediatePoints1, config1, midpoint)
+			&& segmentCollisionFree(intermediatePoints2, midpoint, config2))
+	{
+		intermediatePoints.clear();
+		intermediatePoints.splice(intermediatePoints.end(), intermediatePoints1);
+		intermediatePoints.push_back(midpoint);
+		intermediatePoints.splice(intermediatePoints.end(), intermediatePoints2);
+		return true;
+	}
+	else {
+		return false;
+	}
 }

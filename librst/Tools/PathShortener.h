@@ -10,10 +10,10 @@ class PathShortener
 {
 public:
 	PathShortener();
-	PathShortener(World* world, int robotId, const std::vector<int> &linksId);
+	PathShortener(World* world, int robotId, const std::vector<int> &linksId, double stepSize = 0.1);
 	~PathShortener();
-	virtual void shortenPath(std::list<Eigen::VectorXd> &rawPath, double stepSize = 0.1);
-	bool checkSegment(std::list<Eigen::VectorXd> &waypoints, const Eigen::VectorXd &config1, const Eigen::VectorXd &config2);
+	virtual void shortenPath(std::list<Eigen::VectorXd> &rawPath);
+	bool segmentCollisionFree(std::list<Eigen::VectorXd> &waypoints, const Eigen::VectorXd &config1, const Eigen::VectorXd &config2);
 protected:
 	World* world;
 	int robotId;

@@ -20,7 +20,6 @@ public:
 	World* world;
 	bool planPath(int robotId, const std::vector<int> &linkIds, const Eigen::VectorXd &start, const Eigen::VectorXd &goal, std::list<Eigen::VectorXd> &path, bool bidirectional = true, bool connect = true, unsigned int maxNodes = 0) const;
 	bool planPath(int robotId, const std::vector<int> &linkIds, const std::vector<Eigen::VectorXd> &start, const std::vector<Eigen::VectorXd> &goal, std::list<Eigen::VectorXd> &path, bool bidirectional = true, bool connect = true, unsigned int maxNodes = 0) const;
-	bool checkPathSegment(int robotId, const std::vector<int> &linkIds, const Eigen::VectorXd &config1, const Eigen::VectorXd &config2) const;
 	static inline double randomInRange(double min, double max);
 private:
 	bool copyWorld;
@@ -49,21 +48,6 @@ PathPlanner<R>::~PathPlanner() {
 	if(this->copyWorld) {
 		delete this->world;
 	}
-}
-
-// true iff collision-free
-// end points are not checked
-template <class R>
-bool PathPlanner<R>::checkPathSegment(int robotId, const vector<int> &linkIds, const Eigen::VectorXd &config1, const Eigen::VectorXd &config2) const {
-	int n = (int)((config2 - config1).norm() / stepsize) + 1;
-	for(int i = 1; i < n; i++) {
-		Eigen::VectorXd conf = (double)(n - i)/(double)n * config1 + (double)i/(double)n * config2;
-		world->robots[robotId]->setConf(linkIds, conf, true);
-		if(world->checkCollisions()) {
-			return false;
-		}
-	}
-	return true;
 }
 
 template <class R>
