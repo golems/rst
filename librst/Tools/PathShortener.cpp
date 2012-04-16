@@ -5,8 +5,6 @@
 using namespace std;
 using namespace Eigen;
 
-extern int numCollisionChecks;
-
 #define RAND12(N1,N2) N1 + ((N2-N1) * ((double)rand() / ((double)RAND_MAX + 1))) // random # between N&M
 
 PathShortener::PathShortener() {}
@@ -26,7 +24,7 @@ void PathShortener::shortenPath(list<VectorXd> &path)
 	printf("--> Start Brute Force Shortener \n"); 
 	srand(time(NULL));
 
-	const int numShortcuts = path.size() * 20;
+	const int numShortcuts = path.size() * 5;
 	
 	// Number of checks
 	for( int count = 0; count < numShortcuts; count++ ) {
@@ -79,7 +77,6 @@ bool PathShortener::segmentCollisionFree(list<VectorXd> &intermediatePoints, con
 
 	VectorXd midpoint = (double)n2 / (double)n * config1 + (double)n1 / (double)n * config2;
 	list<VectorXd> intermediatePoints1, intermediatePoints2;
-	numCollisionChecks++;
 	world->robots[robotId]->setConf(linkIds, midpoint);
 	if(!world->checkCollisions() && segmentCollisionFree(intermediatePoints1, config1, midpoint)
 			&& segmentCollisionFree(intermediatePoints2, midpoint, config2))
