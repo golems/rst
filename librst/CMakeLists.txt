@@ -34,7 +34,6 @@ Tools/World
 Tools/IK
 Tools/Path
 Tools/PathPlanner
-Tools/Shortener
 Tools/PathShortener
 Tools/ParabolicBlendTrajectory
 Tools/Path
