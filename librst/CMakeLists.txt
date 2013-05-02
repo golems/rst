@@ -70,6 +70,8 @@ set ( HEADERS
 ../
 )
 
+link_directories(/usr/lib/)
+
 set (wxWidgets_USE_LIBS base core gl)
 find_package (wxWidgets)
 if (wxWidgets_FOUND) 

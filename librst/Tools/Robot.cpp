@@ -108,7 +108,7 @@ int Robot::findLink(string name){
 
 void Robot::setConf(const VectorXd &conf, bool updateCollisionModel) {
 	if(conf.size() != links.size()) {
-		cout << "Error: Configuration size does not match number of links" << endl;
+		cout << "Error: Configuration size does not match number of links: " << links.size() << endl;
 	}
 	int j = 0;
 	for(unsigned int i = 0; i < links.size(); i++) {

@@ -45,10 +45,12 @@
 #include <GUI/RSTFrame.h>
 #include <iostream>
 using namespace std;
+#include <Eigen/Dense>
+using namespace Eigen;
 
 #include <Tabs/AllTabs.h>
 #include <RSTApp.h>
-
+#include <librst/Tools/IK.h>
 
 //Give each slider a number so we recognize them (also indicates order of select on tabbing)
 enum sliderNames {
@@ -58,6 +60,7 @@ enum sliderNames {
 //Add a handler for slider changes
 BEGIN_EVENT_TABLE(TemplateTab, wxPanel)
 EVT_COMMAND (wxID_ANY, wxEVT_RST_SLIDER_CHANGE, TemplateTab::OnSlider)
+	EVT_COMMAND (wxID_ANY, wxEVT_COMMAND_BUTTON_CLICKED, TemplateTab::OnButton)
 END_EVENT_TABLE ()
 
 // Class constructor for the tab: Each tab will be a subclass of RSTTab
@@ -68,38 +71,40 @@ TemplateTab::TemplateTab(wxWindow *parent, const wxWindowID id,
 	RSTTab(parent, id, pos, size, style) {
 	sizerFull = new wxBoxSizer(wxHORIZONTAL);
 
-	// Create Static boxes - these are the outlines you see on the inspector tab - a nice way to organize things
-	wxStaticBox* ss1Box = new wxStaticBox(this, -1, wxT("Sample Box 1"));
-	wxStaticBox* ss2Box = new wxStaticBox(this, -1, wxT("Sampel Box 2"));
+	wxStaticBox* algoBox = new wxStaticBox(this, -1, wxT("Algorithms"));
+	wxStaticBoxSizer* algoBoxSizer = new wxStaticBoxSizer(algoBox, wxVERTICAL);
+	algoBoxSizer->Add(new wxButton(this, 19123, wxT("Show")), 0, wxALL, 4);
+	
+	sizerFull->Add(algoBoxSizer, 0, wxALL | wxEXPAND, 5);
+}
 
-	// Create sizers for these static boxes
-	wxStaticBoxSizer* ss1BoxS = new wxStaticBoxSizer(ss1Box, wxVERTICAL);
-	wxStaticBoxSizer* ss2BoxS = new wxStaticBoxSizer(ss2Box, wxVERTICAL);
+void TemplateTab::OnButton(wxCommandEvent& evt) {
 
-	// Add 2 static text fields (these can be re-written by the handler)
-	sampleText1 = new wxStaticText(this, -1, wxT("Sample text 1"),
-			wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE);
-	sampleText2 = new wxStaticText(this, -1, wxT("Sample text 2"),
-			wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE);
 
-	// Create RST-style sliders
-	sampleRSTSlider1 = new RSTSlider("SS1", -180, 180, 2000, 0, 1000, 2000,
-			this, SAMPLE_RST_SLIDER1);
-	sampleRSTSlider2 = new RSTSlider("SS2", -180, 180, 2000, 0, 1000, 2000,
-			this, SAMPLE_RST_SLIDER2);
+	// Create the IK structure
+	vector <int> idx;
+	for(size_t i = 0; i < 7; i++) idx.push_back(i+1);
+	IK ik (world, 0, 7);
+	static bool doik = false;
+	static Eigen::Transform <double, 3, Affine> pose;
+	static Eigen::VectorXd angles (7);
+	if(!doik){
+		pose = world->robots[0]->links[7]->absPose;
+		world->robots[0]->getConf(angles);
+		cout << "recording angles: " << angles.transpose() / M_PI * 180.0 << endl;
+		cout << "recording pose: \n" << pose.matrix() << endl;
+	}
+	else {
+		cout << "attempting pose: \n" << pose.matrix() << endl;
+		ik.calculate(pose, 11*M_PI/12, angles);	
+		cout << "angles: " << angles.transpose() / M_PI * 180.0 << endl;
+		if(angles(1) != 0.0) world->robots[0]->setConf(idx, angles, false);
+		world->robots[0]->Draw();
+	}
+	doik = !doik;
+		
 
-	// Add the boxes to their respective sizers
-	sizerFull->Add(ss1BoxS, 1, wxEXPAND | wxALL, 6);
-	sizerFull->Add(ss2BoxS, 1, wxEXPAND | wxALL, 6);
-	SetSizer(sizerFull);
 
-	// Add content to box1 (1st sample text and slider)
-	ss1BoxS->Add(sampleText1, 1, wxEXPAND | wxALL, 6);
-	ss1BoxS->Add(sampleRSTSlider1, 1, wxEXPAND | wxALL, 6);
-
-	// Add content to box2 (2nd sample text and slider)
-	ss2BoxS->Add(sampleRSTSlider2, 1, wxEXPAND | wxALL, 6);
-	ss2BoxS->Add(sampleText2, 1, wxEXPAND | wxALL, 6);
 
 }
 

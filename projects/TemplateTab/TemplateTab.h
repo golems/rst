@@ -65,6 +65,7 @@ public:
 	RSTSlider* sampleRSTSlider2;
 
 	void OnSlider(wxCommandEvent &evt);
+	void OnButton(wxCommandEvent& evt);
 	void RSTStateChange();
 
 	// Thread specific

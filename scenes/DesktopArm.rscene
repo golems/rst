@@ -2,7 +2,7 @@
 
 ##### ROBOT 1 #####
 
-> 	ROBOT SCHUNKARM schunk/SchunkArmHand.rsdh
+> 	ROBOT SCHUNKARM schunk/SchunkArm.rsdh
 > 	POSITION -0.132 1.316 0.721
 > 	ORIENTATION 90 -0 0
 
